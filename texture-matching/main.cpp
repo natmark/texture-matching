@@ -45,14 +45,13 @@ void show_humat(const char *winName, HuMat &src){
     int width = src.width;
     int height = src.height;
     
-    cv::Mat res(height, width, CV_8UC1, cv::Scalar(0));
+    Mat res(height, width, CV_8UC1, Scalar(0));
     
     int *ptrSrc = src.data;
     
     uchar *ptrRes = res.data;
     
-    for(int y = 0; y < height; y++)
-    {
+    for(int y = 0; y < height; y++){
         for(int x = 0; x < width; x++)
             ptrRes[x] = abs(ptrSrc[x]);
         
@@ -60,8 +59,8 @@ void show_humat(const char *winName, HuMat &src){
         ptrRes += res.step;
     }
     
-    cv::imshow(winName, res);
-    cv::waitKey();
+    imshow(winName, res);
+    waitKey();
 }
 
 void haar_wavelet_transform(HuMat &img, HuMat &res){
@@ -78,30 +77,27 @@ void haar_wavelet_transform(HuMat &img, HuMat &res){
     int stride1 = img.stride;
     int stride2 = centerMat.stride;
     
-    int len = width/2;
+    int len = width / 2;
     
     assert(height % 2 == 0 && width % 2 == 0);
     
-    for(int y = 0; y < height; y++)
-    {
-        for(int x = 0; x < width; x += 2)
-        {
+    for(int y = 0; y < height; y++){
+        for(int x = 0; x < width; x += 2){
             int a = ptrSrc[x];
-            int b = ptrSrc[x+1];
+            int b = ptrSrc[x + 1];
             
             int idx = x >> 1;
             
-            ptrRes[idx] = (a+b)/2;
-            ptrRes[idx + len] = (a-b)/2;
+            ptrRes[idx] = (a + b) / 2;
+            ptrRes[idx + len] = (a - b) / 2;
         }
-        
         ptrSrc += stride1;
         ptrRes += stride2;
     }
     
     create_humat(res, width, height);
     
-    len = height/2;
+    len = height / 2;
     
     ptrSrc = centerMat.data;
     ptrRes = res.data;
@@ -109,52 +105,20 @@ void haar_wavelet_transform(HuMat &img, HuMat &res){
     stride1 = centerMat.stride;
     stride2 = res.stride;
     
-    for(int y = 0; y < height; y += 2)
-    {
-        for(int x = 0; x < width; x++)
-        {
+    for(int y = 0; y < height; y += 2){
+        for(int x = 0; x < width; x++){
             int a = ptrSrc[x];
             int b = ptrSrc[stride1 + x];
             
-            ptrRes[x] = (a+b)/2;
-            ptrRes[len * stride2 + x] = (a-b)/2;
+            ptrRes[x] = (a + b) / 2;
+            ptrRes[len * stride2 + x] = (a - b) / 2;
         }
-        
         ptrSrc += 2 * stride1;
         ptrRes += stride2;
     }
     
     free_humat(centerMat);
 }
-
-int blur_detect(HuMat &img, float *conf){
-    HuMat haarRes[3];
-    
-    int width = img.width;
-    int height = img.height;
-    
-    HuMat src = img;
-    
-    assert(width % 8 == 0 && height % 8 == 0);
-    
-    for(int i = 0; i < 3; i++)
-    {
-        show_humat("src", src);
-        haar_wavelet_transform(src, haarRes[i]);
-        show_humat("haar res", haarRes[i]);
-        
-        src.width = haarRes[i].width >> 1;
-        src.height = haarRes[i].height >> 1;
-        src.stride = haarRes[i].stride;
-        src.data = haarRes[i].data;
-    }
-    
-    for(int i = 0; i < 3; i++)
-        free_humat(haarRes[i]);
-    
-    return 0;
-}
-
 
 int main(int argc, char **argv){
     
@@ -182,10 +146,12 @@ int main(int argc, char **argv){
         ptrSrc += src.stride;
         ptrImg += inputImage.step;
     }
+    HuMat dst;
+    haar_wavelet_transform(src, dst);
+    show_humat("transformed", dst);
     
-    float confidence = 0;
-    
-    int ret = blur_detect(src, &confidence);
+    free_humat(src);
+    free_humat(dst);
     
     return 0;
 }
